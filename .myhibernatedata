@@ -1,0 +1,24 @@
+#MyEclipse Hibernate Properties
+#Fri Apr 27 12:04:56 CST 2012
+sessionFactoryName=com.gz.eport.casserver.util.HibernateSessionFactory
+genBasicCompId=true
+profile=
+daoSFId=
+version=3.2
+jndiPath=
+detectM2M=false
+reStrategyClass=
+detectO2O=false
+springDaoFile=
+useJavaTypes=true
+keyGenerator=
+libInstallFolder=/WebRoot/WEB-INF/lib
+addLibs2Project=true
+genVersionTag=false
+sessionFactoryId=
+basePersistenceClass=
+genAnnotations=true
+reSettingsFile=
+configFile=/NewCasServer/src/hibernate.cfg.xml
+createConfigFile=true
+addLibs2Classpath=true

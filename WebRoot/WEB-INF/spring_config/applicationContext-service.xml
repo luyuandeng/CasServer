@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jee="http://www.springframework.org/schema/jee" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+					http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+					http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+	default-lazy-init="true">
+<!-- 
+	<bean id="nativeJdbcExtractor"
+		class="org.springframework.jdbc.support.nativejdbc.C3P0NativeJdbcExtractor"
+		lazy-init="true" />
+	<bean id="oracleLobHandler"
+		class="org.springframework.jdbc.support.lob.OracleLobHandler"
+		lazy-init="true">
+		<property name="nativeJdbcExtractor" ref="nativeJdbcExtractor" />
+	</bean>
+ -->
+<!-- 
+	<bean id="defaultLobHandler"
+		class="org.springframework.jdbc.support.lob.DefaultLobHandler"
+		lazy-init="true" />
+ -->
+ <!-- 
+	<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    	<property name="location">
+    		<value>classpath:jdbc.properties</value>
+ 
+		</property>
+	</bean>
+  -->
+
+	<!--   
+	<bean id="dataSource" class="org.logicalcobwebs.proxool.ProxoolDataSource">		
+		<property name="driver" value="${db.driver}"/>
+		<property name="driverUrl" value="${db.url}"/>
+		<property name="user" value="${db.user}"/>
+		<property name="password" value="${db.password}"/>
+    	<property name="alias" value="${db.alias}"/>
+    	<property name="maximumConnectionCount" value="${db.maximumConnectionCount}"/>
+    	<property name="minimumConnectionCount" value="${db.minimumConnectionCount}"/>
+    	<property name="delegateProperties" value="characterEncoding=${db.characterEncoding}"/>
+	</bean>
+	-->
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver">
+		</property>
+
+		 <property name="url" value="jdbc:oracle:thin:@192.168.111.238:1521:testdata"/> 
+
+		<property name="username" value="portal"></property>
+		<property name="password" value="portal"></property>
+	
+	</bean>
+	<!--  	classpath:ehcache.xml  -->
+  <bean id="cacheManager"
+		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+		<property name="configLocation">
+			<value>
+				classpath:ehcache/ehcache.xml
+			</value>
+		</property>
+	</bean>
+	<bean id="sessionFactory" class="com.gzeport.logistics.common.support.HibernateHelpSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="lobHandler">
+		<ref bean="lobHandler" />
+		</property>
+		<!--   
+		<property name="entityInterceptor">   
+			<ref bean="treeInterceptor"/>
+		</property>
+		-->
+		<property name="mappingResources">
+			<bean
+				class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+				<property name="targetObject">
+					<ref local="hibernateMappingFileSetUtil" />
+				</property>
+				<property name="targetMethod">
+					<value>getLists</value>
+				</property>
+			</bean>
+		</property>
+		<property name="hibernateProperties">
+			<value>
+			<!--  org.hibernate.dialect.Oracle9Dialect  org.hibernate.dialect.MySQLInnoDBDialect  hibernate.query.factory_class=org.hibernate.hql.classic.ClassicQueryTranslatorFactory -->
+			hibernate.dialect=org.hibernate.dialect.Oracle9iDialect
+			hibernate.show_sql=true
+			hibernate.format_sql=false
+			hibernate.query.substitutions=true 1, false 0
+			hibernate.jdbc.batch_size=20
+			hibernate.cache.provider_class=org.hibernate.cache.EhCacheProvider
+			hibernate.cglib.use_reflection_optimizer=true
+			hibernate.generate_statistics=true
+			hibernate.cache.use_query_cache=true
+			hibernate.cache.use_second_level_cache=true
+			hibernate.jdbc.use_scrollable_resultset=true 
+			
+			<!--
+			
+			 hibernate.query.factory_class=org.hibernate.hql.classic.ClassicQueryTranslatorFactory
+			hibernate.query.factory_class=org.hibernate.hql.ast.ASTQueryTranslatorFactory
+			 -->
+			hibernate.cache.provider_configuration_file_resource_path=/../spring_config/ehcache-hibernate2.xml
+			
+			</value>
+		</property>
+		 
+		
+		<property name="mappingDirectoryLocations">
+			<list>
+		
+			<!-- 
+				<value>classpath:/com/gzeport/logistics/basic/to</value>
+			<value>classpath:/com/jeecms/cms/entity</value>
+			<value>classpath:/com/jeecms/article/entity</value>
+			<value>classpath:/com/jeecms/download/entity</value>
+			<value>classpath:/com/jeecms/auxiliary/entity</value>
+			 -->
+			</list>
+		</property>
+		<property name="jndiName">
+			<value>hibernate/sessionFactory_portal</value>
+		</property>
+	</bean>
+
+	
+	<bean id="methodCache"
+		class="org.springframework.cache.ehcache.EhCacheFactoryBean">
+		<property name="cacheManager">
+			<ref local="cacheManager" />
+		</property>
+		<property name="cacheName">
+			<value>portal.gzeport3.METHOD_CACHE3</value>
+		</property>
+	</bean>
+	
+	<bean id="methodCacheInterceptor"
+		class="com.gzeport.logistics.common.interceptor.MethodCacheInterceptor">
+		<property name="cache">
+			<ref local="methodCache" />
+		</property>
+	</bean>
+	
+	<bean id="methodCachePointCut" abstract="true"
+		class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice">
+			<ref local="methodCacheInterceptor" />
+		</property>
+		<!-- property name="pattern">
+			<value>.*findMenuRepository</value>
+			</property-->
+	</bean>
+	
+	<!--  
+		<bean name="initialEnvironment"
+		class="com.gzeport.logistics.common.support.InitialEnvironment">
+		<property name="production">
+			<value>${isProduction}</value>
+		</property>
+	</bean>
+
+	<bean id="treeInterceptor" class="com.gzeport.core.common.hibernate3.TreeIntercptor">
+	</bean>
+		 -->
+		<!-- Lob字段的处理句柄配置 //-->
+	<bean id="nativeJdbcExtractor"
+		class="org.springframework.jdbc.support.nativejdbc.CommonsDbcpNativeJdbcExtractor"
+		lazy-init="true" />
+	<bean id="lobHandler"
+		class="org.springframework.jdbc.support.lob.OracleLobHandler"
+		lazy-init="true">
+		<property name="nativeJdbcExtractor">
+			<ref local="nativeJdbcExtractor" />
+		</property>
+	</bean>
+		<!-- Transaction template for Managers, from:
+		http://blog.exis.com/colin/archives/2004/07/31/concise-transaction-definitions-spring-11/ -->
+	<bean id="txProxyTemplate" abstract="true"
+		class="org.springframework.aop.framework.ProxyFactoryBean">
+		<property name="optimize">
+			<value>true</value>
+		</property>
+		<property name="proxyTargetClass">
+			<value>true</value>
+		</property>
+		<property name="interceptorNames">
+			<list>
+				<value>daoMethodCacheInterceptor</value>
+				<value>TransactionInterceptor</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="daoMethodCacheInterceptor"
+		class="com.gzeport.logistics.common.interceptor.ThreadMethodCacheInterceptor">
+	</bean>
+	
+		<bean id="TransactionInterceptor"
+		class="org.springframework.transaction.interceptor.TransactionInterceptor">
+		<property name="transactionManager">
+			<ref bean="transactionManager1" />
+		</property>
+		<property name="transactionAttributes">
+			<props>
+				<prop key="get*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="find*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="log*">PROPAGATION_REQUIRES_NEW</prop>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- Transaction manager for a single Hibernate SessionFactory (alternative to JTA) -->
+	<bean id="transactionManager1"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory">
+			<ref local="sessionFactory" />
+		</property>
+	</bean>
+	
+		<bean id="daoTemplate" abstract="true"
+		class="com.gzeport.logistics.common.dao.BaseDAO">
+		<property name="sessionFactory">
+			<ref local="sessionFactory" />
+		</property>
+		<property name="cache">
+			<ref local="methodCache" />
+		</property>
+	</bean>
+
+	<bean id="hibernateMappingFileSetUtil"
+		class="com.gzeport.logistics.common.util.ListSetUtil">
+		<property name="prefix">
+			<value>hibernateMapping</value>
+		</property>
+	</bean>
+
+	<bean id="messageSource2"
+		class="org.springframework.context.support.ResourceBundleMessageSource"
+		depends-on="messageSourceListSetUtil">
+		<property name="basenames">
+			<bean
+				class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+				<property name="targetObject">
+					<ref local="messageSourceListSetUtil" />
+				</property>
+				<property name="targetMethod">
+					<value>getLists</value>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="messageSourceListSetUtil"
+		class="com.gzeport.logistics.common.util.ListSetUtil">
+		<property name="prefix">
+			<value>messageSource2</value>
+		</property>
+	</bean>
+
+	<bean id="messageSource.common"
+		class="com.gzeport.logistics.common.util.ListHelper">
+		<property name="mappings">
+			<list>
+				<!--			
+				<value>com.gzeport.app.arrival.common.ApplicationResources</value>
+					<value>com.gzeport.app.edi.common.ApplicationResources</value>
+					<value>com.gzeport.portal.common.ApplicationResources</value>
+				-->
+			</list>
+		</property>
+	</bean>
+	<bean id="com.gzeport.logistics.common.service.impl.BaseManager"
+		class="com.gzeport.logistics.common.service.impl.BaseManager">
+		<property name="DAO">
+			<ref bean="common.baseDao" />
+		</property>
+	</bean>
+	
+	<!-- struts2 事务配置 -->
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<!-- 使用annotation 自动注册bean,并检查@Required,@Autowired的属性已被注入 -->
+	<context:component-scan base-package="com.gzeport.app" />
+	<context:component-scan base-package="org.springside" />
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="txManager" />
+</beans>
